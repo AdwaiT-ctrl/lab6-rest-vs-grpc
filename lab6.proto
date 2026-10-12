@@ -1,0 +1,17 @@
+syntax = "proto3";
+package lab6;
+
+service Lab6 {
+  rpc Add(AddRequest) returns (AddReply);
+  rpc RawImage(RawImageRequest) returns (ImageReply);
+  rpc DotProduct(DotProductRequest) returns (DotProductReply);
+  rpc JsonImage(JsonImageRequest) returns (ImageReply);
+}
+message AddRequest { int32 a = 1; int32 b = 2; }
+message AddReply { int32 sum = 1; }
+message RawImageRequest { bytes img = 1; }
+// Doubles preserve Python random.random() precision across both transports.
+message DotProductRequest { repeated double a = 1; repeated double b = 2; }
+message DotProductReply { double dotproduct = 1; }
+message JsonImageRequest { string img = 1; }
+message ImageReply { int32 width = 1; int32 height = 2; }
