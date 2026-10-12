@@ -1,41 +1,39 @@
 # REST and gRPC comparison
 
-## Required GCP measurements — pending
+## GCP measurements
 
-The implementation is complete and locally verified. These experiments still require access to the specified Google Cloud VMs. Pending entries are unmeasured; they are not estimates. All times below are milliseconds per operation, except PING, which is mean round-trip time.
+All RPC entries are mean milliseconds per operation. PING entries are mean round-trip times in milliseconds. Local and same-zone measurements use 1,000 calls per method; different-region measurements use 100. Each benchmark performs five untimed warmup calls and verifies the responses.
 
-| Method | Local (us-west1-a VM) | Same-Zone (us-west1-a) | Different Region (europe-west3-a) |
-|---|---|---|---|
-| REST add | Pending | Pending | Pending |
-| gRPC add | Pending | Pending | Pending |
-| REST rawimg | Pending | Pending | Pending |
-| gRPC rawimg | Pending | Pending | Pending |
-| REST dotproduct | Pending | Pending | Pending |
-| gRPC dotproduct | Pending | Pending | Pending |
-| REST jsonimg | Pending | Pending | Pending |
-| gRPC jsonimg | Pending | Pending | Pending |
-| PING | Pending | Pending | Pending |
+| Method | Local | Same-Zone | Different Region |
+|---|---:|---:|---:|
+| REST add | 2.432 | 4.035 | 314.685 |
+| gRPC add | 0.815 | 1.363 | 284.978 |
+| REST rawimg | 4.314 | 24.402 | 1258.875 |
+| gRPC rawimg | 7.910 | 12.485 | 418.617 |
+| REST dotproduct | 2.735 | 3.839 | 319.346 |
+| gRPC dotproduct | 0.944 | 1.702 | 141.009 |
+| REST jsonimg | 17.928 | 30.680 | 1684.096 |
+| gRPC jsonimg | 23.529 | 35.819 | 430.919 |
+| PING | 0.060 | 0.457 | 377.836 |
 
-Run the commands in RUNNING.md on e2-standard-2 VMs using internal IP addresses to complete this table. The cloud performance observations must be finalized after those measurements.
+## Experimental configuration
 
-## Supplemental laptop results
+The following configuration was used for the supplied measurements:
 
-Measured on October 11, 2026, on Windows with Python 3.11. Both servers and clients ran on this computer through 127.0.0.1. Each RPC used 1000 measured calls after 5 warmups. Raw data: measurements/laptop-local.csv. These are laptop measurements, not the required cloud results.
+| VM | Role | Zone | Machine type | Internal IP |
+|---|---|---|---|---|
+| lab6-client | All clients; localhost servers | us-west1-a | e2-medium | 10.138.0.16 |
+| lab6-server-west | Same-zone servers | us-west1-a | e2-medium | 10.138.0.17 |
+| lab6-server-europe | Different-region servers | europe-west2-a (London) | e2-medium | 10.154.0.2 |
 
-| Method | Laptop localhost (ms/op) | Request payload (bytes) |
-|---|---:|---:|
-| REST add | 11.508 | 0 (arguments in URL) |
-| gRPC add | 0.384 | 4 |
-| REST rawimg | 27.523 | 1,655,274 |
-| gRPC rawimg | 12.042 | 1,655,278 |
-| REST dotproduct | 13.513 | 4,075 |
-| gRPC dotproduct | 0.447 | 1,606 |
-| REST jsonimg | 45.292 | 2,207,045 |
-| gRPC jsonimg | 18.191 | 2,207,037 |
-| PING | <1 ms for all 10 replies | — |
+Both transports use the same supplied JPEG and two length-100 random vectors generated with the same seed. Payload loading and preparation are outside the timed loop. REST creates a new Session/TCP connection for every request; gRPC reuses one ready channel. Timings include the synchronous request, server processing, response, and response parsing. Images are opened to inspect dimensions without decoding all pixels.
 
-Windows ping reported 0 ms average because its output rounds sub-millisecond RTTs. This does not establish zero network latency. The JPEG is 1,655,274 bytes; base64 expands it to 2,207,032 bytes before JSON/protobuf field overhead. Payload sizes exclude transport headers and framing and do not measure wire bandwidth.
+Raw RPC data are preserved in measurements/local.csv, measurements/same-zone.csv, and measurements/different-region.csv. The ping files contain the summary lines supplied from the VM runs. The different-region CSV includes an earlier REST add result of 506.834 ms and a later result of 314.685 ms. The table uses the later entry, which accompanies the complete eight-method sequence; both entries remain in the raw CSV.
 
-## Observations from the laptop experiment
+## Performance observations
 
-On this laptop, gRPC was faster for all four operations. The largest relative differences were for add and dotproduct, where connection and serialization overhead dominate the small payload and inexpensive computation. This REST client establishes a new TCP connection for every query, while the gRPC client reuses a single channel. Higher network RTT should increase the cost of REST's repeated TCP handshakes; both transports still incur request/response latency. REST can also reuse connections with a persistent Session, so this comparison applies to the connection behavior required by this assignment. The image results show that larger payloads reduce the relative benefit of gRPC: transfer and buffer processing become more substantial. Base64 increased image payload size by about one third, and both base64 image methods were slower than their raw binary counterparts. Same-zone and cross-region effects have not yet been measured, so no claims about their actual timings are made here.
+For the small add and dotproduct requests, gRPC was faster than REST in all three scenarios. Network latency becomes a major part of the different-region measurements: small local calls take about 0.8–2.7 ms, whereas the corresponding different-region calls take about 141–319 ms. Opening a new TCP connection per REST call introduces handshake overhead, while gRPC's reused channel avoids repeated connection establishment. Large different-region images also favor gRPC: raw images took 418.617 ms versus REST's 1258.875 ms, and base64 images took 430.919 ms versus REST's 1684.096 ms. However, gRPC was not universally faster: REST was faster for local raw and base64 images and for same-zone base64 images. These results reflect the combined effects of connection handling, serialization, buffering, server implementation, and network conditions; the measurements do not isolate each cost.
+
+Base64 expands the 1,655,274-byte JPEG to 2,207,032 bytes before field overhead, about a 33.3% increase. Base64 image calls were slower than raw image calls for both transports in every scenario. Protobuf also reduced the dotproduct request payload from 4,075 bytes for JSON to 1,606 bytes. The recorded byte counts are application payload sizes, excluding transport headers, framing, and responses; they are not measurements of wire bandwidth.
+
+The ping samples were collected separately from the RPC runs. In particular, the different-region ping mean of 377.836 ms exceeds some RPC averages, so it cannot be treated as a simultaneous baseline or subtracted from those timings to estimate Python overhead. Network conditions or paths may have differed between samples; the provided data do not establish the cause. The earlier and later different-region REST add results also show variability between runs.
