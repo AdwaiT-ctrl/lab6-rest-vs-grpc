@@ -1,0 +1,9 @@
+protocol,method,scenario,host,port,reps,warmup,ms_per_operation,request_payload_bytes
+REST,add,local,localhost,5000,1000,5,2.4319280770005207,0
+REST,rawimage,local,localhost,5000,1000,5,4.313810886999818,1655274
+REST,dotproduct,local,localhost,5000,1000,5,2.734600156999477,4075
+REST,jsonimage,local,localhost,5000,1000,5,17.92768265399991,2207045
+gRPC,add,local,localhost,50051,1000,5,0.8154035480001767,4
+gRPC,rawimage,local,localhost,50051,1000,5,7.909619089000444,1655278
+gRPC,dotproduct,local,localhost,50051,1000,5,0.9441411679999874,1606
+gRPC,jsonimage,local,localhost,50051,1000,5,23.5289642380003,2207037

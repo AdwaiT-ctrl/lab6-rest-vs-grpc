@@ -2,3 +2,10 @@ __pycache__/
 .venv/
 *.pyc
 .uv-cache/
+.venv*/
+venv/
+__pycache__/
+*.pyc
+*.log
+*.tar.gz
+.uv-cache/

@@ -1,0 +1,10 @@
+protocol,method,scenario,host,port,reps,warmup,ms_per_operation,request_payload_bytes
+REST,add,different-region,10.154.0.2,5000,100,5,506.83423544000107,0
+REST,add,different-region,10.154.0.2,5000,100,5,314.6846229499988,0
+REST,rawimage,different-region,10.154.0.2,5000,100,5,1258.8752285600003,1655274
+REST,dotproduct,different-region,10.154.0.2,5000,100,5,319.34571785000117,4075
+REST,jsonimage,different-region,10.154.0.2,5000,100,5,1684.0958571899955,2207045
+gRPC,add,different-region,10.154.0.2,50051,100,5,284.9776863399984,4
+gRPC,rawimage,different-region,10.154.0.2,50051,100,5,418.6174862200005,1655278
+gRPC,dotproduct,different-region,10.154.0.2,50051,100,5,141.00861037999493,1606
+gRPC,jsonimage,different-region,10.154.0.2,50051,100,5,430.9185105599954,2207037
